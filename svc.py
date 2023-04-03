@@ -7,6 +7,7 @@ import numpy as np
 from scipy.integrate import odeint
 import scipy.optimize as opt
 import time
+import quadprog
 
 class SVC():
     def __init__(self,xs,p=0.1,q=1, is_log = False):
@@ -53,6 +54,7 @@ class SVC():
         result = cvx.Problem(objective, constraints).solve()
         self.beta = np.array(beta.value)
         self.get_const_sum()
+
 
 
     def r_func(self,x):
@@ -147,7 +149,8 @@ class SVC():
     def searchSEV(self,SEV, M, x):
         k = 0 
         for i in range(M+1):
-            if np.linalg.norm(x-SEV[i]) < 1e-4:
+            # если вектора почти совпали по норме, считаем что его уже нашли
+            if np.linalg.norm(x-SEV[i]) <= 1e-3:
                 k=i
         return k   
 
@@ -254,13 +257,16 @@ class SVC():
                         ids.remove(i)
                 self.clusters[num_clusters].append(cid)
         
+       
+#        if len(self.clusters)>10:
+#            print(f"Number of clusters is more than 10 ({len(self.clusters)})")
+#            return 
+
+    def show_Lee(self):
         labels=np.zeros(self.xs.shape[0])
         for i in self.clusters.keys():
             for j in self.clusters[i]:
                 labels[np.where(self.indices == j)[0]]=int(i)
-#        if len(self.clusters)>10:
-#            print(f"Number of clusters is more than 10 ({len(self.clusters)})")
-#            return 
         df=DataFrame(dict(x=self.xs[:,0],y=self.xs[:,1],label=labels))
         dic=mcolors.TABLEAU_COLORS
         colors = list(dic.values())

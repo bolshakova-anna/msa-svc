@@ -6,6 +6,7 @@ import numpy as np
 
 from scipy.integrate import odeint
 import scipy.optimize as opt
+import time
 
 class SVC():
     def __init__(self,xs,p=0.1,q=1, is_log = False):
@@ -68,7 +69,7 @@ class SVC():
                 return False
         return True
     
-    def cluster(self):
+    def init_vectors_and_rad(self):
         svs_tmp = np.array(self.C > self.beta) * np.array(self.beta > 0)
         # print(svs_tmp)
         self.svs=np.where(svs_tmp==True)[0]
@@ -78,6 +79,10 @@ class SVC():
         self.r = [self.r_func(self.xs[i]) for i in self.svs]
         self.r = np.mean(self.r)
 
+    def cluster(self):
+        
+        t1 = time.time()
+        
         self.adj=np.zeros((self.N,self.N))
         #BSVs не классифицируются этой процедурой, поскольку их изображения лежат вне охватывающей сферы радиуса 
         for i in range(self.N):
@@ -86,6 +91,9 @@ class SVC():
                 for j in range(i,self.N):
                     if j not in self.bsvs:
                         self.adj[i,j]=self.adj[j,i]= self.sample_segment(self.xs[i],self.xs[j])
+        
+        t = time.time() - t1
+        print("Прошло времени:", t)
 
     def return_clusters(self):
         ids=list(range(self.N))
@@ -103,6 +111,8 @@ class SVC():
                         queue.append(i)
                         ids.remove(i)
                 self.clusters[num_clusters].append(cid)
+
+
 
     def show_plot(self):
         labels=np.zeros(self.xs.shape[0])
@@ -153,7 +163,7 @@ class SVC():
         indices = -np.ones((sizeData[rows], 1)); #array of indices of SEVs
         SEV = -np.ones((sizeData[rows], sizeData[cols])); #matrix SEV's
         indices[self.beta == self.C] = -2
-        #t1 = cputime;
+        t1 = time.time()
         for i in range(N):
             if indices[i] != -2:    
                 x0 = self.xs[i]
@@ -165,7 +175,8 @@ class SVC():
                     M+=1
                     indices[i][0]=M
                     SEV[M-1][:] = x
-       # t = cputime - t1;
+        t = time.time() - t1
+        print("Прошло времени:", t)
         #delete useless cells
         if M < sizeData[rows] :
             SEV = SEV[0:M,:]
@@ -258,6 +269,6 @@ class SVC():
         fig.set_figheight(15)
         grouped=df.groupby('label')
         for key,group in grouped:
-            group.plot(ax=ax,kind='scatter',x='x',y='y',label=key,color=colors[int(key)])
-        pyplot.scatter(self.SEVs[:, 0], self.SEVs[:, 1], c='y', marker='d', label="SEV")
+            group.plot(ax=ax,kind='scatter',x='x',y='y',label=key,marker = 'o',color=colors[int(key)])
+        ax.scatter(self.SEVs[:, 0], self.SEVs[:, 1], c='r', marker='d', label="SEV")
         pyplot.show()
